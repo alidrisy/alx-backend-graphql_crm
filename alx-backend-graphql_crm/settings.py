@@ -70,6 +70,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'alx-backend-graphql_crm.wsgi.application'
 
+GRAPHENE = {
+    "SCHEMA": "alx-backend-graphql_crm.schema.schema"
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
