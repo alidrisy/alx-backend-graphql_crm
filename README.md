@@ -33,7 +33,7 @@ A comprehensive Customer Relationship Management (CRM) system built with Django 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd alx-backend-graphql_crm
+   cd alx_backend_graphql_crm
    ```
 
 2. **Create virtual environment**
@@ -522,7 +522,7 @@ mutation {
 ## 🏗️ Project Structure
 
 ```
-alx-backend-graphql_crm/
+alx_backend_graphql_crm/
 ├── alx_backend_graphql_crm/     # Main Django project
 │   ├── settings.py              # Django settings
 │   ├── urls.py                  # URL configuration
