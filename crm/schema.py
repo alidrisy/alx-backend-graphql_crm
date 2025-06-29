@@ -248,23 +248,41 @@ class CreateOrder(graphene.Mutation):
             
             products = Product.objects.filter(id__in=input.product_ids)
             if len(products) != len(input.product_ids):
+                # Find which product IDs are invalid
+                found_ids = set(str(p.id) for p in products)
+                invalid_ids = [pid for pid in input.product_ids if pid not in found_ids]
                 return OrderMutationResponse(
                     success=False,
-                    errors=["One or more invalid product IDs"]
+                    errors=[f"Invalid product ID(s): {', '.join(invalid_ids)}"]
                 )
             
             # Calculate total amount
             total_amount = sum(product.price for product in products)
             
-            # Create order
-            order = Order.objects.create(
-                customer=customer,
-                total_amount=total_amount,
-                order_date=input.order_date or timezone.now()
-            )
+            # Validate total amount is positive
+            if total_amount <= 0:
+                return OrderMutationResponse(
+                    success=False,
+                    errors=["Order total must be greater than zero"]
+                )
             
-            # Associate products
-            order.products.set(products)
+            # Create order with transaction to ensure data consistency
+            with transaction.atomic():
+                order = Order.objects.create(
+                    customer=customer,
+                    total_amount=total_amount,
+                    order_date=input.order_date or timezone.now()
+                )
+                
+                # Associate products
+                order.products.set(products)
+                
+                # Verify total amount calculation
+                calculated_total = order.calculate_total()
+                if calculated_total != total_amount:
+                    # Update with correct total
+                    order.total_amount = calculated_total
+                    order.save(update_fields=['total_amount'])
             
             return OrderMutationResponse(
                 order=order,
@@ -272,10 +290,15 @@ class CreateOrder(graphene.Mutation):
                 success=True
             )
             
-        except Exception as e:
+        except ValidationError as e:
             return OrderMutationResponse(
                 success=False,
                 errors=[str(e)]
+            )
+        except Exception as e:
+            return OrderMutationResponse(
+                success=False,
+                errors=[f"An error occurred while creating the order: {str(e)}"]
             )
 
 
@@ -289,10 +312,22 @@ class Query(graphene.ObjectType):
     product = graphene.Field(ProductType, id=graphene.ID(required=True))
     order = graphene.Field(OrderType, id=graphene.ID(required=True))
     
-    # Filtered list queries
-    all_customers = DjangoFilterConnectionField(CustomerType, filterset_class=CustomerFilter)
-    all_products = DjangoFilterConnectionField(ProductType, filterset_class=ProductFilter)
-    all_orders = DjangoFilterConnectionField(OrderType, filterset_class=OrderFilter)
+    # Filtered list queries with ordering support
+    all_customers = DjangoFilterConnectionField(
+        CustomerType, 
+        filterset_class=CustomerFilter,
+        orderBy=graphene.List(of_type=graphene.String)
+    )
+    all_products = DjangoFilterConnectionField(
+        ProductType, 
+        filterset_class=ProductFilter,
+        orderBy=graphene.List(of_type=graphene.String)
+    )
+    all_orders = DjangoFilterConnectionField(
+        OrderType, 
+        filterset_class=OrderFilter,
+        orderBy=graphene.List(of_type=graphene.String)
+    )
 
     def resolve_hello(self, info):
         return "Hello, GraphQL!"
@@ -314,6 +349,24 @@ class Query(graphene.ObjectType):
             return Order.objects.get(id=id)
         except Order.DoesNotExist:
             return None
+    
+    def resolve_all_customers(self, info, orderBy=None, **kwargs):
+        queryset = Customer.objects.all()
+        if orderBy:
+            queryset = queryset.order_by(*orderBy)
+        return queryset
+    
+    def resolve_all_products(self, info, orderBy=None, **kwargs):
+        queryset = Product.objects.all()
+        if orderBy:
+            queryset = queryset.order_by(*orderBy)
+        return queryset
+    
+    def resolve_all_orders(self, info, orderBy=None, **kwargs):
+        queryset = Order.objects.all()
+        if orderBy:
+            queryset = queryset.order_by(*orderBy)
+        return queryset
 
 
 # Mutation Class
