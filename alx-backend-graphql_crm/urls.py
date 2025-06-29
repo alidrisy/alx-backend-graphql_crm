@@ -1,5 +1,5 @@
 """
-URL configuration for alx-backend-graphql_crm project.
+URL configuration for alx_backend_graphql_crm project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
@@ -21,8 +21,5 @@ from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    path("graphql", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    path('graphql', csrf_exempt(GraphQLView.as_view(graphiql=True))),
 ]
-
-
