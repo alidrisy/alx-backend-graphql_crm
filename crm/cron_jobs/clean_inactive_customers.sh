@@ -1,5 +1,9 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT" || exit 1
+
 timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
 deleted_count=$(python manage.py shell <<EOF
@@ -18,4 +22,8 @@ print(count)
 EOF
 )
 
-echo "$timestamp - Deleted $deleted_count inactive customers." >> /tmp/customer_cleanup_log.txt
+if [ $? -eq 0 ]; then
+  echo "$timestamp - Deleted $deleted_count inactive customers." >> /tmp/customer_cleanup_log.txt
+else
+  echo "$timestamp - Failed to delete customers." >> /tmp/customer_cleanup_log.txt
+fi
