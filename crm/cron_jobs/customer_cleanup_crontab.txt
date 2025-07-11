@@ -1,1 +1,2 @@
 0 2 * * 0 /bin/bash /home/abdulrahman/alx_ProDev/alx-backend-graphql_crm/crm/cron_jobs/clean_inactive_customers.sh
+0 8 * * * /usr/bin/env python3 /home/abdulrahman/alx_ProDev/alx-backend-graphql_crm/crm/cron_jobs/send_order_reminders.py
