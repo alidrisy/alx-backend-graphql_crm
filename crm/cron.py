@@ -7,14 +7,15 @@ def log_crm_heartbeat():
     now = datetime.datetime.now()
     timestamp = now.strftime("%d/%m/%Y-%H:%M:%S")
     message = f"{timestamp} CRM is alive\n"
-
     log_path = "/tmp/crm_heartbeat_log.txt"
+    error_log_path = "/tmp/crm_error_log.txt"
 
     try:
         with open(log_path, "a", encoding="utf-8") as file:
             file.write(message)
     except Exception as e:
-        print(f"Error writing to log file: {e}")
+        with open(error_log_path, "a", encoding="utf-8") as err_file:
+            err_file.write(f"{timestamp} Error writing to log file: {e}\n")
 
     try:
         transport = RequestsHTTPTransport(
@@ -22,7 +23,6 @@ def log_crm_heartbeat():
             verify=False,
             retries=3,
         )
-
         client = Client(transport=transport, fetch_schema_from_transport=False)
 
         query = gql(
@@ -36,4 +36,5 @@ def log_crm_heartbeat():
         response = client.execute(query)
         print(f"GraphQL 'hello' field response: {response.get('hello')}")
     except Exception as e:
-        print(f"GraphQL endpoint check failed: {e}")
+        with open(error_log_path, "a", encoding="utf-8") as err_file:
+            err_file.write(f"{timestamp} GraphQL endpoint check failed: {e}\n")
