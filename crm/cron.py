@@ -42,12 +42,12 @@ def log_crm_heartbeat():
 
 
 def update_low_stock():
-    graphql_url = "http://localhost:8000/graphql"  # Adjust this URL as needed
+    graphql_url = "http://localhost:8000/graphql"
 
     mutation = """
     mutation {
       updateLowStockProducts {
-        updatedProducts {
+        products {
           id
           name
           stock
@@ -64,11 +64,11 @@ def update_low_stock():
         response.raise_for_status()
         data = response.json()
 
-        updated_products = data["data"]["updateLowStockProducts"]["updatedProducts"]
+        updated_products = data["data"]["updateLowStockProducts"]["products"]
         message = data["data"]["updateLowStockProducts"]["message"]
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        log_path = "/tmp/low_stock_updates_log.txt"
+        log_path = "/tmp/lowstockupdates_log.txt"
 
         with open(log_path, "a", encoding="utf-8") as log_file:
             log_file.write(f"{timestamp} - {message}\n")
@@ -79,7 +79,7 @@ def update_low_stock():
             log_file.write("\n")
 
     except Exception as e:
-        with open("/tmp/low_stock_updates_log.txt", "a", encoding="utf-8") as log_file:
+        with open("/tmp/lowstockupdates_log.txt", "a", encoding="utf-8") as log_file:
             log_file.write(
                 f"Error updating stock at {datetime.datetime.now()}: {str(e)}\n\n"
             )
