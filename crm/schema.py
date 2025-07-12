@@ -357,29 +357,18 @@ class UpdateLowStockProducts(graphene.Mutation):
 
     @staticmethod
     def mutate(root, info):
-        try:
-            low_stock_products = Product.objects.filter(stock__lt=10)
-            updated_products = []
-
-            with transaction.atomic():
-                for product in low_stock_products:
-                    product.stock += 10
-                    product.save(update_fields=["stock"])
-                    updated_products.append(product)
-
-            return UpdateLowStockProductsResponse(
-                products=updated_products,
-                message=f"Restocked {len(updated_products)} product(s) successfully.",
-                success=True,
-                errors=[],
-            )
-        except Exception as e:
-            return UpdateLowStockProductsResponse(
-                products=[],
-                message="",
-                success=False,
-                errors=[str(e)],
-            )
+        low_stock_products = Product.objects.filter(stock__lt=10)
+        updated_products = []
+        for product in low_stock_products:
+            product.stock += 10
+            product.save(update_fields=["stock"])
+            updated_products.append(product)
+        return UpdateLowStockProductsResponse(
+            products=updated_products,
+            message=f"Restocked {len(updated_products)} product(s) successfully.",
+            success=True,
+            errors=[],
+        )
 
 
 class Mutation(graphene.ObjectType):
