@@ -68,7 +68,7 @@ def update_low_stock():
         message = data["data"]["updateLowStockProducts"]["message"]
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        log_path = "/tmp/lowstockupdates_log.txt"
+        log_path = "/tmp/low_stock_updates_log.txt"
 
         with open(log_path, "a", encoding="utf-8") as log_file:
             log_file.write(f"{timestamp} - {message}\n")
@@ -79,7 +79,7 @@ def update_low_stock():
             log_file.write("\n")
 
     except Exception as e:
-        with open("/tmp/lowstockupdates_log.txt", "a", encoding="utf-8") as log_file:
+        with open("/tmp/low_stock_updates_log.txt", "a", encoding="utf-8") as log_file:
             log_file.write(
                 f"Error updating stock at {datetime.datetime.now()}: {str(e)}\n\n"
             )
