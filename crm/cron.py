@@ -1,0 +1,39 @@
+import datetime
+from gql import gql, Client
+from gql.transport.requests import RequestsHTTPTransport
+
+
+def log_crm_heartbeat():
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%d/%m/%Y-%H:%M:%S")
+    message = f"{timestamp} CRM is alive\n"
+
+    log_path = "/tmp/crm_heartbeat_log.txt"
+
+    try:
+        with open(log_path, "a", encoding="utf-8") as file:
+            file.write(message)
+    except Exception as e:
+        print(f"Error writing to log file: {e}")
+
+    try:
+        transport = RequestsHTTPTransport(
+            url="http://localhost:8000/graphql",
+            verify=False,
+            retries=3,
+        )
+
+        client = Client(transport=transport, fetch_schema_from_transport=False)
+
+        query = gql(
+            """
+            query {
+                hello
+            }
+        """
+        )
+
+        response = client.execute(query)
+        print(f"GraphQL 'hello' field response: {response.get('hello')}")
+    except Exception as e:
+        print(f"GraphQL endpoint check failed: {e}")
