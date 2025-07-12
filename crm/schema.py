@@ -375,11 +375,13 @@ class UpdateLowStockProducts(graphene.Mutation):
             )
         except Exception as e:
             return UpdateLowStockProductsResponse(
-                products=[], message="", success=False, errors=[str(e)]
+                products=[],
+                message="",
+                success=False,
+                errors=[str(e)],
             )
 
 
-# Mutation Class
 class Mutation(graphene.ObjectType):
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()

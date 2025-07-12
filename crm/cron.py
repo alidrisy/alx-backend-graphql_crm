@@ -1,6 +1,7 @@
 import datetime
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
+import requests
 
 
 def log_crm_heartbeat():
@@ -41,45 +42,44 @@ def log_crm_heartbeat():
 
 
 def update_low_stock():
-    now = datetime.datetime.now()
-    timestamp = now.strftime("%d/%m/%Y-%H:%M:%S")
-    error_log_path = "/tmp/update_low_stock_error.txt"
+    graphql_url = "http://localhost:8000/graphql"  # Adjust this URL as needed
+
+    mutation = """
+    mutation {
+      updateLowStockProducts {
+        updatedProducts {
+          id
+          name
+          stock
+        }
+        message
+      }
+    }
+    """
+
+    headers = {"Content-Type": "application/json"}
 
     try:
-        transport = RequestsHTTPTransport(
-            url="http://localhost:8000/graphql",
-            verify=False,
-            retries=3,
-        )
-        client = Client(transport=transport, fetch_schema_from_transport=False)
+        response = requests.post(graphql_url, json={"query": mutation}, headers=headers)
+        response.raise_for_status()
+        data = response.json()
 
-        mutation = gql(
-            """
-            mutation {
-                updateLowStockProducts {
-                    success
-                    message
-                    errors
-                    products {
-                        id
-                        name
-                        stock
-                        price
-                    }
-                }
-            }
-            """
-        )
+        updated_products = data["data"]["updateLowStockProducts"]["updatedProducts"]
+        message = data["data"]["updateLowStockProducts"]["message"]
 
-        response = client.execute(mutation)
-        data = response.get("updateLowStockProducts")
-        print(f"Success: {data.get('success')}")
-        print(f"Message: {data.get('message')}")
-        print(f"Errors: {data.get('errors')}")
-        print("Updated Products:")
-        for product in data.get("products", []):
-            print(f"- {product['name']} (Stock: {product['stock']})")
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_path = "/tmp/low_stock_updates_log.txt"
+
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            log_file.write(f"{timestamp} - {message}\n")
+            for product in updated_products:
+                log_file.write(
+                    f"Updated product: {product['name']} - New stock: {product['stock']}\n"
+                )
+            log_file.write("\n")
 
     except Exception as e:
-        with open(error_log_path, "a", encoding="utf-8") as err_file:
-            err_file.write(f"{timestamp} GraphQL mutation failed: {e}\n")
+        with open("/tmp/low_stock_updates_log.txt", "a", encoding="utf-8") as log_file:
+            log_file.write(
+                f"Error updating stock at {datetime.datetime.now()}: {str(e)}\n\n"
+            )
